@@ -627,8 +627,8 @@
     document.getElementById('preview-status').textContent = `生成中...${pct}%${etaText}`;
   }
 
-  function addThumbnail(url, status) {
-    previewState.thumbnails.push({ id: generateId(), url, status });
+  function addThumbnail(url, status, error) {
+    previewState.thumbnails.push({ id: generateId(), url, status, error: error || '' });
     renderThumbnails();
   }
 
@@ -644,17 +644,22 @@
       return;
     }
 
-    container.innerHTML = filtered.map((t) => `
+    container.innerHTML = filtered.map((t) => {
+      const imgHtml = t.url
+        ? `<img src="${escapeHtml(t.url)}" alt="thumb">`
+        : `<div class="thumb-placeholder-failed"><span>❌</span><small>生成失败</small></div>`;
+      return `
       <div class="thumb-card ${t.status === 'failed' ? 'thumb-failed' : ''}" data-thumb-id="${escapeHtml(t.id)}">
-        <img src="${escapeHtml(t.url)}" alt="thumb">
+        ${imgHtml}
         ${t.status === 'failed' ? '<div class="thumb-failed-badge">✕</div>' : ''}
         <div class="thumb-menu">
           <button class="thumb-menu-btn" data-action="folder">打开文件夹</button>
-          ${t.status === 'failed' ? '<button class="thumb-menu-btn" data-action="retry">重试</button>' : ''}
+          ${t.status === 'failed' ? `<button class="thumb-menu-btn" data-action="retry">重试</button>` : ''}
           <button class="thumb-menu-btn" data-action="delete">删除</button>
         </div>
       </div>
-    `).join('');
+    `;
+    }).join('');
 
     container.querySelectorAll('.thumb-card').forEach((card) => {
       const id = card.getAttribute('data-thumb-id');
@@ -952,7 +957,7 @@
       });
   }
 
-  /* ---------- Batch Generate Mock ---------- */
+  /* ---------- Batch Generate Real API ---------- */
   function initBatchGenerate() {
     const btn = document.getElementById('start-batch');
     if (!btn) return;
@@ -964,40 +969,105 @@
         alert('请至少填写一个提示词');
         return;
       }
-      runMockGeneration(tasks);
+      runRealGeneration(tasks);
     });
   }
 
-  function runMockGeneration(tasks) {
-    let i = 0;
-    function next() {
-      if (i >= tasks.length) {
-        setPreviewIdle();
-        return;
-      }
-      const t = tasks[i];
-      const taskName = `#${padNum(t.idx + 1)}: ${t.prompt.slice(0, 16)}${t.prompt.length > 16 ? '...' : ''}`;
-      setPreviewGenerating(taskName);
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += Math.random() * 15 + 5;
-        if (progress >= 100) {
-          progress = 100;
-          clearInterval(interval);
-          const success = Math.random() > 0.15;
-          if (success) {
-            addThumbnail(`https://picsum.photos/seed/${generateId()}/400/300.jpg`, 'success');
-          } else {
-            addThumbnail(`https://picsum.photos/seed/${generateId()}/40/40.jpg?grayscale`, 'failed');
-          }
-          i++;
-          setTimeout(next, 400);
-        }
-        setPreviewProgress(Math.floor(progress), Math.floor((100 - progress) / 10));
-      }, 300);
+  async function runRealGeneration(tasks) {
+    const provider = document.getElementById('provider').value;
+    const modelSelect = document.getElementById('model').value;
+    const customModel = document.getElementById('custom-model').value.trim();
+    const apiKey = document.getElementById('api-key').value.trim();
+    const outputDir = document.getElementById('output-dir').value.trim();
+
+    if (!apiKey) {
+      alert('请填写 API 密钥');
+      return;
     }
-    next();
+    if (!outputDir) {
+      alert('请选择输出目录');
+      return;
+    }
+
+    const config = {
+      api_key: apiKey,
+      api_url: provider === 'custom'
+        ? (document.getElementById('custom-url').value.trim() || 'https://api.example.com/v1')
+        : 'https://lnapi.com/v1beta/models/gemini-3-pro-image-preview:generateContent',
+      model: provider === 'custom' ? (customModel || 'custom-model') : modelSelect,
+      aspect_ratio: document.querySelector('.pill-group[data-group="ratio"] .pill.active')?.getAttribute('data-value') || '1:1',
+      quality: document.querySelector('.pill-group[data-group="quality"] .pill.active')?.getAttribute('data-value') || '2k',
+      output_dir: outputDir,
+    };
+
+    const payload = {
+      tasks: tasks.map((t) => ({
+        id: t.id || padNum(t.idx + 1),
+        prompt: t.prompt,
+        filename: t.filename || `image_${padNum(t.idx + 1)}`,
+      })),
+      config,
+      reference_images: referenceImages || [],
+    };
+
+    setPreviewGenerating(`批量生成 ${tasks.length} 张图片`);
+    setPreviewProgress(5, 0);
+
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`服务器错误 ${res.status}: ${errText}`);
+      }
+
+      const results = await res.json();
+      let successCount = 0;
+      let failCount = 0;
+      let skipCount = 0;
+
+      results.forEach((r) => {
+        if (r.skipped) {
+          skipCount++;
+          addThumbnail(`/api/image?path=${encodeURIComponent(config.output_dir + '/' + r.filename)}`, 'success');
+        } else if (r.success) {
+          successCount++;
+          addThumbnail(`/api/image?path=${encodeURIComponent(config.output_dir + '/' + r.filename)}`, 'success');
+        } else {
+          failCount++;
+          addThumbnail('', 'failed', r.error);
+        }
+      });
+
+      setPreviewIdle();
+      showGenerateModal(successCount, failCount, skipCount);
+    } catch (err) {
+      console.error(err);
+      setPreviewIdle();
+      alert('生成失败: ' + err.message);
+    }
   }
+
+  function showGenerateModal(success, fail, skip) {
+    document.getElementById('modal-success-count').textContent = success;
+    document.getElementById('modal-fail-count').textContent = fail;
+    document.getElementById('modal-skip-count').textContent = skip;
+    document.getElementById('modal-time').textContent = '刚刚完成';
+    document.getElementById('generate-modal').classList.remove('hidden');
+  }
+
+  function closeGenerateModal() {
+    document.getElementById('generate-modal').classList.add('hidden');
+  }
+
+  document.getElementById('close-generate-modal').addEventListener('click', closeGenerateModal);
+  document.getElementById('generate-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'generate-modal') closeGenerateModal();
+  });
 
   /* ---------- Init ---------- */
   function init() {
