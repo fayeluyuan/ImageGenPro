@@ -997,8 +997,8 @@
         ? (document.getElementById('custom-url').value.trim() || 'https://api.example.com/v1')
         : 'https://lnapi.com/v1beta/models/gemini-3-pro-image-preview:generateContent',
       model: provider === 'custom' ? (customModel || 'custom-model') : modelSelect,
-      aspect_ratio: document.querySelector('.pill-group[data-group="ratio"] .pill.active')?.getAttribute('data-value') || '1:1',
-      quality: document.querySelector('.pill-group[data-group="quality"] .pill.active')?.getAttribute('data-value') || '2k',
+      aspect_ratio: document.querySelector('.pill-group[data-aspect-group] .btn-pill.active')?.getAttribute('data-aspect') || '1:1',
+      quality: document.querySelector('.pill-group[data-quality-group] .btn-pill.active')?.getAttribute('data-quality') || '2k',
       output_dir: outputDir,
     };
 
