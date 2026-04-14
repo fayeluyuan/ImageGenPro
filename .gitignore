@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Environment variables
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build artifacts (保留 dist/ 中的发布版 EXE)
+build/
+*.spec.bak
+
+# Database / cache
+*.db
+*.sqlite3
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
