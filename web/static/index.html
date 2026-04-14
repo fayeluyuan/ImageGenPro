@@ -43,23 +43,34 @@
           <div class="form-group">
             <label class="form-label" for="provider">服务商</label>
             <select class="form-select" id="provider">
-              <option>OpenAI</option>
-              <option>Midjourney</option>
-              <option>Stability AI</option>
-              <option>本地 ComfyUI</option>
+              <option value="lieniao">烈鸟 API</option>
+              <option value="custom">自定义 API</option>
             </select>
           </div>
-          <div class="form-group">
+          <div class="form-group" id="model-group">
             <label class="form-label" for="model">模型</label>
             <select class="form-select" id="model">
-              <option>DALL·E 3</option>
-              <option>SDXL</option>
-              <option>Flux.1</option>
+              <option value="gemini-2.0-flash-exp-image-generation">gemini-2.0-flash-exp-image-generation [性价比高]</option>
+              <option value="gemini-3.1-flash-image-preview">gemini-3.1-flash-image-preview [平衡之选]</option>
+              <option value="gemini-3-pro-image-preview">gemini-3-pro-image-preview [质量最佳 · 较贵]</option>
+              <option value="gemini-1.5-pro-image-preview">gemini-1.5-pro-image-preview [通用场景]</option>
+              <option value="custom">自定义模型名称</option>
             </select>
+          </div>
+          <div class="form-group hidden" id="custom-model-group">
+            <label class="form-label" for="custom-model">自定义模型</label>
+            <input class="form-input" type="text" id="custom-model" placeholder="输入模型名称">
           </div>
           <div class="form-group">
             <label class="form-label" for="api-key">API 密钥</label>
-            <input class="form-input" type="password" id="api-key" placeholder="sk-...">
+            <div class="password-input-wrap">
+              <input class="form-input" type="password" id="api-key" placeholder="sk-...">
+              <button type="button" class="password-toggle" id="api-key-toggle" aria-label="显示密码">👁</button>
+            </div>
+          </div>
+          <div class="form-group hidden" id="custom-url-group">
+            <label class="form-label" for="custom-url">自定义 API 地址</label>
+            <input class="form-input" type="text" id="custom-url" placeholder="https://api.example.com/v1">
           </div>
         </div>
 
@@ -75,27 +86,18 @@
             <span class="aspect-group-label">画幅比例</span>
             <div class="pill-group" data-aspect-group>
               <button class="btn btn-pill active" data-aspect="1:1">1:1</button>
+              <button class="btn btn-pill" data-aspect="3:4">3:4</button>
               <button class="btn btn-pill" data-aspect="4:3">4:3</button>
               <button class="btn btn-pill" data-aspect="16:9">16:9</button>
               <button class="btn btn-pill" data-aspect="9:16">9:16</button>
             </div>
           </div>
-          <div class="quality-select-row">
-            <div class="form-group">
-              <label class="form-label" for="quality">画质</label>
-              <select class="form-select" id="quality">
-                <option>标准</option>
-                <option>高清</option>
-                <option>超高清</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="style">风格</label>
-              <select class="form-select" id="style">
-                <option>自然</option>
-                <option>电影感</option>
-                <option>动漫</option>
-              </select>
+          <div class="form-group" style="margin-top: 14px;">
+            <span class="aspect-group-label">画质</span>
+            <div class="pill-group" data-quality-group>
+              <button class="btn btn-pill active" data-quality="1k">1k</button>
+              <button class="btn btn-pill" data-quality="2k">2k</button>
+              <button class="btn btn-pill" data-quality="4k">4k</button>
             </div>
           </div>
         </div>
@@ -108,8 +110,8 @@
               <div class="card-subtitle">拖拽上传或点击选择</div>
             </div>
           </div>
-          <div class="drop-zone" data-drop-zone>
-            <input type="file" multiple accept="image/*" class="sr-only">
+          <div class="drop-zone" data-drop-zone id="ref-drop-zone">
+            <input type="file" multiple accept="image/*" class="sr-only" id="ref-file-input">
             <div class="drop-zone-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -120,49 +122,40 @@
             <div class="drop-zone-text">点击或拖拽图片到此处</div>
             <div class="drop-zone-hint">支持 JPG、PNG、WebP</div>
           </div>
-          <div class="ref-thumb-grid">
-            <div class="ref-thumb">占位</div>
-            <div class="ref-thumb">占位</div>
-            <div class="ref-thumb">占位</div>
+          <div class="ref-thumb-grid" id="ref-thumb-grid">
+            <!-- thumbnails injected here -->
           </div>
+          <button class="btn btn-secondary btn-sm btn-block" id="copy-ref-paths" style="margin-top: 12px;">📋 复制所有参考图路径</button>
         </div>
 
         <!-- Output Directory & Generate -->
         <div class="card generate-card">
           <div class="form-group">
             <label class="form-label" for="output-dir">输出目录</label>
-            <input class="form-input" type="text" id="output-dir" placeholder="/mnt/e/Outputs/ImageGenPro">
+            <div class="output-dir-row">
+              <input class="form-input" type="text" id="output-dir" placeholder="/mnt/e/Outputs/ImageGenPro">
+              <button class="btn btn-secondary" id="browse-output-dir" type="button">浏览</button>
+            </div>
           </div>
-          <button class="btn btn-primary btn-block">开始生成</button>
+          <button class="btn btn-primary btn-block" id="start-batch">开始批量生成</button>
         </div>
 
       </aside>
 
-      <!-- Center Column: Prompt -->
-      <section class="column-center">
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">提示词</div>
-              <div class="card-subtitle">描述你想要生成的画面</div>
-            </div>
-          </div>
-          <textarea class="form-textarea prompt-textarea" placeholder="例如：一位穿着未来风格外套的女性站在霓虹灯闪烁的东京街头，雨夜，电影感打光，8K 细节..."></textarea>
-          <div class="prompt-actions">
-            <button class="btn btn-secondary btn-sm">优化提示词</button>
-            <button class="btn btn-secondary btn-sm">加载模板</button>
+      <!-- Center Column: Prompt Tasks -->
+      <section class="column-center" id="prompt-center">
+        <div class="section-header">
+          <div>
+            <div class="section-title">提示词任务列表</div>
+            <div class="section-subtitle">批量配置生成任务</div>
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">反向提示词</div>
-              <div class="card-subtitle">排除不需要的元素</div>
-            </div>
-          </div>
-          <textarea class="form-textarea" placeholder="例如：低质量、模糊、畸形手指、多余肢体..."></textarea>
+        <div class="prompt-list" id="prompt-list">
+          <!-- prompt cards injected here -->
         </div>
+
+        <button class="btn btn-secondary btn-block" id="add-prompt-card" style="margin-top: 8px;">+ 添加提示词</button>
       </section>
 
       <!-- Right Column: Preview -->
@@ -211,6 +204,27 @@
 
     </div>
   </main>
+
+  <!-- Template Popup -->
+  <div class="template-popup-overlay hidden" id="template-popup">
+    <div class="template-popup">
+      <div class="template-popup-header">
+        <div class="template-popup-title">选择模板</div>
+        <button class="btn-icon" id="close-template-popup">✕</button>
+      </div>
+      <div class="template-grid">
+        <button class="template-item" data-template="电商白底图">电商白底图</button>
+        <button class="template-item" data-template="ins风场景">ins风场景</button>
+        <button class="template-item" data-template="街头时尚">街头时尚</button>
+        <button class="template-item" data-template="咖啡厅氛围">咖啡厅氛围</button>
+        <button class="template-item" data-template="高级感光影">高级感光影</button>
+        <button class="template-item" data-template="模特手持图">模特手持图</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden file input for browse button -->
+  <input type="file" id="browse-dir-input" class="sr-only" webkitdirectory directory>
 
   <script src="/static/js/theme-manager.js"></script>
   <script src="/static/js/app.js"></script>
