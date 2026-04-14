@@ -201,15 +201,13 @@
 
     if (!zone || !input || !grid) return;
 
-    const refImages = []; // { name, url }
-
     function renderThumbs() {
       grid.innerHTML = '';
-      refImages.forEach((img, idx) => {
+      referenceImages.forEach((img, idx) => {
         const item = document.createElement('div');
         item.className = 'ref-thumb-item';
         item.innerHTML = `
-          <img src="${escapeHtml(img.url)}" alt="${escapeHtml(img.name)}">
+          <img src="${escapeHtml(img.dataUrl)}" alt="${escapeHtml(img.name)}">
           <button class="ref-thumb-delete" data-idx="${idx}" aria-label="删除">×</button>
         `;
         grid.appendChild(item);
@@ -219,7 +217,7 @@
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
           const idx = parseInt(btn.getAttribute('data-idx'), 10);
-          refImages.splice(idx, 1);
+          referenceImages.splice(idx, 1);
           renderThumbs();
         });
       });
@@ -228,10 +226,13 @@
     function handleFiles(files) {
       Array.from(files).forEach((file) => {
         if (!file.type.startsWith('image/')) return;
-        const url = URL.createObjectURL(file);
-        refImages.push({ name: file.name, url });
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          referenceImages.push({ name: file.name, dataUrl: e.target.result });
+          renderThumbs();
+        };
+        reader.readAsDataURL(file);
       });
-      renderThumbs();
     }
 
     zone.addEventListener('dragover', (e) => {
@@ -270,7 +271,7 @@
         alert('没有参考图可复制');
         return;
       }
-      const text = refImages.map((img) => img.url).join('\n');
+      const text = referenceImages.map((img) => img.dataUrl).join('\n');
       try {
         await navigator.clipboard.writeText(text);
         const original = copyBtn.textContent;
@@ -285,6 +286,7 @@
   /* ---------- Prompt Cards ---------- */
   let promptCards = [];
   let nextCardId = 1;
+  let referenceImages = [];
 
   function getPromptCardIndexById(id) {
     return promptCards.findIndex((c) => c.id === id);
@@ -1007,7 +1009,7 @@
         filename: t.filename || `image_${padNum(t.idx + 1)}`,
       })),
       config,
-      reference_images: referenceImages || [],
+      reference_images: referenceImages.map((img) => img.dataUrl),
     };
 
     setPreviewGenerating(`批量生成 ${tasks.length} 张图片`);
