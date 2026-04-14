@@ -1,0 +1,136 @@
+/* ========================================
+   Layout System - Three Column Skeleton
+   ======================================== */
+
+/* ---------- Page Container ---------- */
+.page-wrapper {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ---------- Navbar ---------- */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  z-index: 1000;
+  background: var(--nav-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-border);
+  transition: background 0.35s ease, border-color 0.35s ease;
+}
+
+.navbar-inner {
+  max-width: 1600px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+.brand-accent {
+  color: var(--color-accent);
+}
+
+/* ---------- Main Layout ---------- */
+.main-content {
+  padding-top: 88px; /* 64px navbar + 24px spacing */
+  padding-bottom: 48px;
+}
+
+.three-column-layout {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+/* ---------- Left Column ---------- */
+.column-left {
+  width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ---------- Center Column ---------- */
+.column-center {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ---------- Right Column ---------- */
+.column-right {
+  width: 480px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1400px) {
+  .column-right {
+    width: 400px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .three-column-layout {
+    flex-wrap: wrap;
+  }
+
+  .column-left {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .column-left > .card {
+    flex: 1;
+    min-width: 280px;
+  }
+
+  .column-center {
+    width: 100%;
+    order: -1;
+  }
+
+  .column-right {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-wrapper {
+    padding: 0 16px;
+  }
+
+  .navbar-inner {
+    padding: 0 16px;
+  }
+
+  .main-content {
+    padding-top: 80px;
+  }
+
+  .three-column-layout {
+    gap: 20px;
+  }
+}

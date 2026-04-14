@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ImageGenPro</title>
+  <link rel="stylesheet" href="/static/css/design-system.css">
+  <link rel="stylesheet" href="/static/css/layout.css">
+  <link rel="stylesheet" href="/static/css/components.css">
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="navbar-inner">
+      <div class="brand">ImageGen<span class="brand-accent">Pro</span></div>
+      <div class="navbar-actions">
+        <div class="theme-toggle" role="group" aria-label="Theme switcher">
+          <button class="theme-toggle-btn" data-theme-toggle="light" aria-pressed="false">Light</button>
+          <button class="theme-toggle-btn" data-theme-toggle="dark" aria-pressed="false">Dark</button>
+          <button class="theme-toggle-btn" data-theme-toggle="system" aria-pressed="false">System</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content page-wrapper">
+    <div class="three-column-layout">
+
+      <!-- Left Column: Configuration -->
+      <aside class="column-left">
+
+        <!-- API Config -->
+        <div class="card api-config-card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">API 配置</div>
+              <div class="card-subtitle">选择服务商与模型</div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="provider">服务商</label>
+            <select class="form-select" id="provider">
+              <option>OpenAI</option>
+              <option>Midjourney</option>
+              <option>Stability AI</option>
+              <option>本地 ComfyUI</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="model">模型</label>
+            <select class="form-select" id="model">
+              <option>DALL·E 3</option>
+              <option>SDXL</option>
+              <option>Flux.1</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="api-key">API 密钥</label>
+            <input class="form-input" type="password" id="api-key" placeholder="sk-...">
+          </div>
+        </div>
+
+        <!-- Output Config -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">输出配置</div>
+              <div class="card-subtitle">画幅比例与画质</div>
+            </div>
+          </div>
+          <div class="form-group">
+            <span class="aspect-group-label">画幅比例</span>
+            <div class="pill-group" data-aspect-group>
+              <button class="btn btn-pill active" data-aspect="1:1">1:1</button>
+              <button class="btn btn-pill" data-aspect="4:3">4:3</button>
+              <button class="btn btn-pill" data-aspect="16:9">16:9</button>
+              <button class="btn btn-pill" data-aspect="9:16">9:16</button>
+            </div>
+          </div>
+          <div class="quality-select-row">
+            <div class="form-group">
+              <label class="form-label" for="quality">画质</label>
+              <select class="form-select" id="quality">
+                <option>标准</option>
+                <option>高清</option>
+                <option>超高清</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="style">风格</label>
+              <select class="form-select" id="style">
+                <option>自然</option>
+                <option>电影感</option>
+                <option>动漫</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reference Image Upload -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">参考图</div>
+              <div class="card-subtitle">拖拽上传或点击选择</div>
+            </div>
+          </div>
+          <div class="drop-zone" data-drop-zone>
+            <input type="file" multiple accept="image/*" class="sr-only">
+            <div class="drop-zone-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17,8 12,3 7,8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+            </div>
+            <div class="drop-zone-text">点击或拖拽图片到此处</div>
+            <div class="drop-zone-hint">支持 JPG、PNG、WebP</div>
+          </div>
+          <div class="ref-thumb-grid">
+            <div class="ref-thumb">占位</div>
+            <div class="ref-thumb">占位</div>
+            <div class="ref-thumb">占位</div>
+          </div>
+        </div>
+
+        <!-- Output Directory & Generate -->
+        <div class="card generate-card">
+          <div class="form-group">
+            <label class="form-label" for="output-dir">输出目录</label>
+            <input class="form-input" type="text" id="output-dir" placeholder="/mnt/e/Outputs/ImageGenPro">
+          </div>
+          <button class="btn btn-primary btn-block">开始生成</button>
+        </div>
+
+      </aside>
+
+      <!-- Center Column: Prompt -->
+      <section class="column-center">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">提示词</div>
+              <div class="card-subtitle">描述你想要生成的画面</div>
+            </div>
+          </div>
+          <textarea class="form-textarea prompt-textarea" placeholder="例如：一位穿着未来风格外套的女性站在霓虹灯闪烁的东京街头，雨夜，电影感打光，8K 细节..."></textarea>
+          <div class="prompt-actions">
+            <button class="btn btn-secondary btn-sm">优化提示词</button>
+            <button class="btn btn-secondary btn-sm">加载模板</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">反向提示词</div>
+              <div class="card-subtitle">排除不需要的元素</div>
+            </div>
+          </div>
+          <textarea class="form-textarea" placeholder="例如：低质量、模糊、畸形手指、多余肢体..."></textarea>
+        </div>
+      </section>
+
+      <!-- Right Column: Preview -->
+      <aside class="column-right">
+        <div class="card preview-card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">预览</div>
+              <div class="card-subtitle">生成结果将在此显示</div>
+            </div>
+            <span class="badge badge-success">就绪</span>
+          </div>
+          <div class="preview-large">
+            <div class="preview-placeholder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21,15 16,10 5,21"/>
+              </svg>
+              <div>暂无预览</div>
+            </div>
+          </div>
+          <div class="preview-meta" style="margin-top: 12px;">
+            <span>1024 × 1024</span>
+            <span>•</span>
+            <span>等待生成</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">历史缩略图</div>
+              <div class="card-subtitle">最近生成的图片</div>
+            </div>
+          </div>
+          <div class="preview-thumbnails">
+            <div class="thumb-item">图片 1</div>
+            <div class="thumb-item">图片 2</div>
+            <div class="thumb-item">图片 3</div>
+            <div class="thumb-item">图片 4</div>
+            <div class="thumb-item">图片 5</div>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+  </main>
+
+  <script src="/static/js/theme-manager.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
