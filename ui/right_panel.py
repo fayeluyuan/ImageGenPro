@@ -37,6 +37,7 @@ class ImagePreviewWidget(QWidget):
     def set_image(self, image_data: bytes):
         """设置图片"""
         try:
+            self._current_image_data = image_data
             image = Image.open(io.BytesIO(image_data))
             qimage = self._pil_to_qimage(image)
             pixmap = QPixmap.fromImage(qimage)
@@ -81,12 +82,8 @@ class ImagePreviewWidget(QWidget):
 
     def get_image_data(self) -> bytes:
         """获取当前图片数据"""
-        if self.current_pixmap:
-            buffer = io.BytesIO()
-            image = Image.open(io.BytesIO(self.current_pixmap.toImage().bits().asstring()))
-            image.save(buffer, format='PNG')
-            return buffer.getvalue()
-        return b''
+        # 直接返回原始 bytes，避免 QPixmap 反向转换的兼容性问题
+        return getattr(self, '_current_image_data', b'')
 
     def clear(self):
         """清空预览"""

@@ -224,8 +224,20 @@
     }
 
     function handleFiles(files) {
+      const maxCount = 3;
+      const maxSizeMB = 2;
+      const maxSizeBytes = maxSizeMB * 1024 * 1024;
+
       Array.from(files).forEach((file) => {
         if (!file.type.startsWith('image/')) return;
+        if (referenceImages.length >= maxCount) {
+          alert(`最多只能上传 ${maxCount} 张参考图`);
+          return;
+        }
+        if (file.size > maxSizeBytes) {
+          alert(`单张参考图不能超过 ${maxSizeMB}MB，${file.name} 过大`);
+          return;
+        }
         const reader = new FileReader();
         reader.onload = (e) => {
           referenceImages.push({ name: file.name, dataUrl: e.target.result });
@@ -267,7 +279,7 @@
     });
 
     copyBtn.addEventListener('click', async () => {
-      if (refImages.length === 0) {
+      if (referenceImages.length === 0) {
         alert('没有参考图可复制');
         return;
       }
@@ -287,6 +299,7 @@
   let promptCards = [];
   let nextCardId = 1;
   let referenceImages = [];
+  let activeTemplateCardId = null;
 
   function getPromptCardIndexById(id) {
     return promptCards.findIndex((c) => c.id === id);
@@ -334,8 +347,6 @@
     const addBtn = document.getElementById('add-prompt-card');
     const popup = document.getElementById('template-popup');
     const closePopup = document.getElementById('close-template-popup');
-
-    let activeTemplateCardId = null;
 
     function createCardData() {
       return { id: nextCardId++, prompt: '', filename: '' };
@@ -495,6 +506,13 @@
         activeTemplateCardId = null;
       }
     });
+
+    list.addEventListener('click', (e) => {
+      const btn = e.target.closest('.insert-template-btn');
+      if (btn) {
+        activeTemplateCardId = parseInt(btn.getAttribute('data-id'), 10);
+      }
+    });
   }
 
   function renderTemplatePopupGrid() {
@@ -510,10 +528,7 @@
         const tpl = getTemplates().find((t) => t.id === id);
         if (!tpl) return;
         const popup = document.getElementById('template-popup');
-        // find active card from popup context
-        // We need to know which card opened the popup. The original implementation uses activeTemplateCardId
-        // but it's local to initPromptCards. We'll use a global variable set by the popup opener.
-        const cardId = window._activeTemplateCardId;
+        const cardId = activeTemplateCardId;
         if (cardId != null) {
           const list = document.getElementById('prompt-list');
           const ta = list.querySelector(`textarea[data-prompt="${cardId}"]`);
@@ -528,23 +543,11 @@
           }
         }
         popup.classList.add('hidden');
-        window._activeTemplateCardId = null;
+        activeTemplateCardId = null;
       });
     });
   }
 
-  // Hook the insert-template-btn to set global active id
-  const originalInitPromptCards = initPromptCards;
-  initPromptCards = function() {
-    originalInitPromptCards();
-    const list = document.getElementById('prompt-list');
-    list.addEventListener('click', (e) => {
-      const btn = e.target.closest('.insert-template-btn');
-      if (btn) {
-        window._activeTemplateCardId = parseInt(btn.getAttribute('data-id'), 10);
-      }
-    });
-  };
 
   /* ---------- Output Directory Browse ---------- */
   function initBrowseButton() {
@@ -607,16 +610,39 @@
     document.getElementById('preview-status').textContent = '生成中...';
   }
 
+  function setPreviewLarge(url) {
+    const img = document.getElementById('preview-image');
+    const placeholder = document.getElementById('preview-placeholder');
+    if (url) {
+      img.src = url;
+      img.classList.remove('hidden');
+      placeholder.classList.add('hidden');
+    } else {
+      img.classList.add('hidden');
+      img.src = '';
+      placeholder.classList.remove('hidden');
+    }
+  }
+
   function setPreviewIdle() {
     previewState.isGenerating = false;
     previewState.currentTask = null;
-    document.getElementById('preview-subtitle').textContent = '生成结果将在此显示';
     document.getElementById('preview-badge').textContent = '就绪';
     document.getElementById('preview-badge').className = 'badge badge-success';
-    document.getElementById('preview-placeholder').classList.remove('hidden');
-    document.getElementById('preview-image').classList.add('hidden');
     document.getElementById('preview-loading').classList.add('hidden');
     document.getElementById('preview-progress-wrap').classList.add('hidden');
+
+    const img = document.getElementById('preview-image');
+    const placeholder = document.getElementById('preview-placeholder');
+    if (img.src && !img.classList.contains('hidden')) {
+      document.getElementById('preview-subtitle').textContent = '当前生成结果';
+      placeholder.classList.add('hidden');
+    } else {
+      document.getElementById('preview-subtitle').textContent = '生成结果将在此显示';
+      placeholder.classList.remove('hidden');
+      img.classList.add('hidden');
+      img.src = '';
+    }
     document.getElementById('preview-status').textContent = '等待生成';
   }
 
@@ -1033,12 +1059,15 @@
       let skipCount = 0;
 
       results.forEach((r) => {
+        const imageUrl = `/api/image?path=${encodeURIComponent(config.output_dir + '/' + r.filename)}`;
         if (r.skipped) {
           skipCount++;
-          addThumbnail(`/api/image?path=${encodeURIComponent(config.output_dir + '/' + r.filename)}`, 'success');
+          addThumbnail(imageUrl, 'success');
+          setPreviewLarge(imageUrl);
         } else if (r.success) {
           successCount++;
-          addThumbnail(`/api/image?path=${encodeURIComponent(config.output_dir + '/' + r.filename)}`, 'success');
+          addThumbnail(imageUrl, 'success');
+          setPreviewLarge(imageUrl);
         } else {
           failCount++;
           addThumbnail('', 'failed', r.error);

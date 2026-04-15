@@ -154,8 +154,8 @@ def main():
         sys.exit(1)
     
     ensure_dir(args.output)
-    size = get_size_from_ratio(args.ratio)
-    
+    size = get_size_from_ratio(args.ratio, args.quality, args.model)
+
     # 读取CSV
     prompts = read_csv_prompts(args.input)
     if not prompts:

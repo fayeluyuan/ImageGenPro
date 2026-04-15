@@ -34,11 +34,15 @@ class ImageGenerationClient:
 
     def _prepare_image_base64(self, image_path: str) -> str:
         """将图片转为base64"""
+        if not Path(image_path).exists():
+            raise FileNotFoundError(f"参考图文件不存在: {image_path}")
         with open(image_path, "rb") as f:
             return base64.b64encode(f.read()).decode('utf-8')
 
     def _get_image_mime_type(self, image_path: str) -> str:
         """根据文件扩展名获取图片MIME类型"""
+        if not Path(image_path).exists():
+            raise FileNotFoundError(f"参考图文件不存在: {image_path}")
         ext = Path(image_path).suffix.lower()
         mime_types = {
             '.png': 'image/png',

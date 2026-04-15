@@ -75,8 +75,12 @@ class TaskResult(BaseModel):
     skipped: bool = False
 
 
+# 允许 /api/image 访问的输出目录白名单
+_allowed_image_dirs: set = set()
+
+
 @app.post("/api/generate", response_model=List[TaskResult])
-async def generate_batch(req: GenerateRequest):
+def generate_batch(req: GenerateRequest):
     """
     批量图片生成接口
     支持断点续传和自动重试
@@ -91,6 +95,7 @@ async def generate_batch(req: GenerateRequest):
     )
 
     os.makedirs(config.output_dir, exist_ok=True)
+    _allowed_image_dirs.add(os.path.abspath(config.output_dir))
     results: List[TaskResult] = []
 
     # 预处理 reference_images：将 base64 data URL 写入临时文件
@@ -195,31 +200,40 @@ async def generate_batch(req: GenerateRequest):
 
 
 @app.get("/api/image")
-async def get_image(path: str):
+def get_image(path: str):
     """
     读取本地生成的图片文件，供前端预览
-    安全校验：禁止路径遍历和非图片文件
+    安全校验：禁止路径遍历、非图片文件，且必须位于允许的输出目录白名单内
     """
-    # 路径遍历防护
-    if ".." in path or "~" in path or path.startswith(("/etc", "/sys", "/proc", "/dev", "C:\\Windows", "C:\\Program")):
-        raise HTTPException(status_code=400, detail="Invalid path")
-    
     # 只允许常见图片格式
     ext = Path(path).suffix.lower()
     if ext not in (".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"):
         raise HTTPException(status_code=400, detail="Unsupported file type")
-    
-    if not os.path.exists(path):
+
+    abs_path = os.path.abspath(path)
+
+    # 必须落在已注册的白名单目录内
+    if not _allowed_image_dirs:
+        raise HTTPException(status_code=403, detail="No allowed directories configured")
+
+    allowed = any(
+        abs_path.startswith(allowed_dir + os.sep) or abs_path == allowed_dir
+        for allowed_dir in _allowed_image_dirs
+    )
+    if not allowed:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    if not os.path.exists(abs_path):
         raise HTTPException(status_code=404, detail="Image not found")
-    
-    mime_type, _ = mimetypes.guess_type(path)
+
+    mime_type, _ = mimetypes.guess_type(abs_path)
     if not mime_type:
         mime_type = "image/png"
-    
+
     def iterfile():
-        with open(path, "rb") as f:
+        with open(abs_path, "rb") as f:
             yield from f
-    
+
     return StreamingResponse(iterfile(), media_type=mime_type)
 
 

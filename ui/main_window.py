@@ -77,6 +77,7 @@ class MainWindow(QMainWindow):
         self.setup_ui()
         self.apply_styles()
         self.load_config_to_ui()
+        self._cleanup_old_temp_files()
 
     def setup_ui(self):
         # 中央部件
@@ -271,6 +272,23 @@ class MainWindow(QMainWindow):
         else:
             QMessageBox.critical(self, "生成失败", error_message)
             self.right_panel.set_status(f"生成失败: {error_message}")
+
+    def _cleanup_old_temp_files(self):
+        """清理过期的临时参考图文件（7天前）"""
+        try:
+            temp_dir = Path.home() / ".imagegenpro" / "temp"
+            if not temp_dir.exists():
+                return
+            from datetime import datetime, timedelta
+            cutoff = datetime.now() - timedelta(days=7)
+            for f in temp_dir.glob("reference_*.png"):
+                if f.is_file() and datetime.fromtimestamp(f.stat().st_mtime) < cutoff:
+                    try:
+                        f.unlink()
+                    except Exception:
+                        pass
+        except Exception:
+            pass
 
 
 def main():
