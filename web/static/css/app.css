@@ -23,32 +23,197 @@
   display: block;
 }
 
-/* ---------- Output & Generate Card ---------- */
-.generate-card .form-group {
-  margin-bottom: 16px;
+/* ---------- Preview Grid (Right Column) ---------- */
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
 }
 
-.generate-card .btn-block {
-  height: 44px;
-  font-size: 0.9375rem;
-}
-
-/* ---------- Preview Card ---------- */
-.preview-card .card-header {
-  margin-bottom: 12px;
-}
-
-.preview-meta {
+.preview-slot {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+}
+
+.preview-slot:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.preview-slot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.preview-slot-index {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-accent-hover);
+  background: var(--color-accent-soft);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.preview-slot-status {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+}
+
+.preview-slot-status.generating {
+  color: var(--color-warning);
+}
+
+.preview-slot-status.success {
+  color: var(--color-success);
+}
+
+.preview-slot-status.error {
+  color: var(--color-danger);
+}
+
+.preview-slot-body {
+  flex: 1;
+  aspect-ratio: 4 / 3;
+  background: var(--color-bg-page);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.preview-slot-body img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.preview-slot-placeholder {
+  text-align: center;
+  color: var(--color-text-tertiary);
+}
+
+.preview-slot-placeholder svg {
+  width: 36px;
+  height: 36px;
+  margin-bottom: 8px;
+  opacity: 0.4;
+}
+
+.preview-slot-placeholder .placeholder-text {
+  font-size: 0.8125rem;
+}
+
+.preview-slot-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(240, 249, 246, 0.7);
+}
+
+[data-theme="dark"] .preview-slot-loading {
+  background: rgba(11, 26, 21, 0.7);
+}
+
+.preview-slot-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.preview-slot-loading-text {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.preview-slot-error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px;
+  text-align: center;
+}
+
+.preview-slot-error-icon {
+  font-size: 1.5rem;
+  color: var(--color-danger);
+}
+
+.preview-slot-error-text {
+  font-size: 0.75rem;
+  color: var(--color-danger);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- History Thumbnails (Left Bottom) ---------- */
+.history-thumbnails {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.history-thumb-item {
+  width: 60px;
+  height: 60px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: var(--color-bg-page);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.history-thumb-item:hover {
+  border-color: var(--color-accent);
+  transform: translateY(-2px);
+}
+
+.history-thumb-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.history-empty {
   font-size: 0.8125rem;
   color: var(--color-text-tertiary);
+  padding: 8px 0;
 }
 
 /* ---------- Scrollbar Styling ---------- */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -57,7 +222,7 @@
 
 ::-webkit-scrollbar-thumb {
   background: var(--color-border);
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -72,8 +237,7 @@
 .form-select,
 .form-textarea,
 .drop-zone,
-.preview-large,
-.thumb-item,
+.preview-slot,
 .theme-toggle,
 .theme-toggle-btn,
 .prompt-card,
@@ -82,13 +246,13 @@
   transition-property: background-color, border-color, color, box-shadow, transform;
 }
 
-/* ---------- Thumbnail Cards (Right Panel) ---------- */
+/* ---------- Thumbnail Cards (legacy) ---------- */
 .thumb-card {
   position: relative;
-  width: 80px;
-  height: 80px;
+  width: 72px;
+  height: 72px;
   flex-shrink: 0;
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--color-bg-page);
   border: 1px solid var(--color-border);
   overflow: hidden;
@@ -109,7 +273,7 @@
 }
 
 .thumb-failed {
-  border-color: rgba(220, 38, 38, 0.3);
+  border-color: rgba(244, 63, 94, 0.3);
 }
 
 .thumb-placeholder-failed {
@@ -119,7 +283,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: var(--color-error);
+  color: var(--color-danger);
   font-size: 0.75rem;
   gap: 4px;
 }
@@ -132,10 +296,10 @@
   position: absolute;
   top: 4px;
   right: 4px;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: var(--color-error);
+  background: var(--color-danger);
   color: #fff;
   font-size: 0.625rem;
   display: flex;
@@ -146,7 +310,7 @@
 .thumb-menu {
   position: absolute;
   inset: 0;
-  background: rgba(26, 26, 26, 0.75);
+  background: rgba(15, 41, 30, 0.75);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -154,7 +318,7 @@
   gap: 6px;
   opacity: 0;
   transition: opacity 0.2s ease;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 .thumb-card:hover .thumb-menu {
@@ -186,7 +350,7 @@
 .preview-tabs {
   display: flex;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 10px;
   margin-bottom: 8px;
 }
 
@@ -196,39 +360,63 @@
   color: var(--color-text-secondary);
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
 }
 
 .preview-tab.active {
-  background: var(--color-primary);
-  color: #fff;
-  border-color: var(--color-primary);
+  background: var(--color-accent-soft);
+  color: var(--color-primary);
+  border-color: var(--color-accent);
+  font-weight: 500;
 }
 
-/* ---------- Loading Animation ---------- */
+/* ---------- Loading Animation (legacy) ---------- */
 .preview-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
   height: 100%;
 }
 
 .preview-spinner {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border: 3px solid var(--color-border);
   border-top-color: var(--color-accent);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
 .hidden {
   display: none !important;
+}
+
+/* ---------- Set Generated Image as Reference Button ---------- */
+.preview-set-ref {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.preview-set-ref:hover {
+  background: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
+}
+
+[data-theme="dark"] .preview-set-ref {
+  background: rgba(30, 41, 35, 0.9);
 }

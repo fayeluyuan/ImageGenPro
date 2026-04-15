@@ -100,6 +100,8 @@ class ImageGenerationClient:
 
             # 处理错误响应
             if response.status_code != 200:
+                raw_body = response.text[:500]
+                print(f"[API RAW {response.status_code}] body={raw_body!r}")
                 error_msg = f"HTTP错误 {response.status_code}"
                 try:
                     error_data = response.json()
@@ -112,7 +114,7 @@ class ImageGenerationClient:
                     elif "message" in error_data:
                         error_msg += f": {error_data['message']}"
                 except:
-                    error_msg += f": {response.text[:200]}"
+                    error_msg += f": {raw_body}"
 
                 if response.status_code == 401:
                     error_msg += "\n\n授权失败，请检查API Key是否正确或已过期"
@@ -308,16 +310,11 @@ class ImageGenerationClient:
             if progress_callback:
                 progress_callback("正在发送请求...")
 
-            # 使用 API Key 作为查询参数或请求头
+            # 保留 Authorization 请求头（烈鸟 API 使用 Bearer Token 鉴权）
             headers = {
                 "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.api_key}",
             }
-
-            # 尝试在URL中添加key参数
-            if "?" in gemini_url:
-                gemini_url += f"&key={self.api_key}"
-            else:
-                gemini_url += f"?key={self.api_key}"
 
             response = self.session.post(gemini_url, json=payload, headers=headers, timeout=120)
 

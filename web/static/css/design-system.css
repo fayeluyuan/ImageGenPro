@@ -1,5 +1,5 @@
 /* ========================================
-   ImageGenPro Web v2 - Design System
+   ImageGenPro Web - Forest Mint Design System
    ======================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -7,72 +7,91 @@
 /* ---------- Light Theme (Default) ---------- */
 :root,
 [data-theme="light"] {
-  --color-primary: #1a1a1a;
-  --color-accent: #c9a86c;
-  --color-bg-page: #f7f6f4;
+  /* 森林薄荷色系 */
+  --color-primary: #0f3d2e;
+  --color-accent: #34d399;
+  --color-accent-soft: #d1fae5;
+  --color-accent-hover: #10b981;
+
+  --color-bg-page: #f0f9f6;
   --color-bg-card: #ffffff;
-  --color-border: #e5e5e5;
-  --color-text-primary: #1a1a1a;
-  --color-text-secondary: #525252;
-  --color-text-tertiary: #737373;
-  --color-success: #059669;
-  --color-danger: #dc2626;
-  --color-warning: #d97706;
+  --color-border: #e0ece8;
 
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.08), 0 6px 12px -2px rgba(0, 0, 0, 0.04);
+  --color-text-primary: #0f291e;
+  --color-text-secondary: #4a6359;
+  --color-text-tertiary: #7a9589;
 
-  --nav-bg: rgba(247, 246, 244, 0.82);
+  --color-success: #10b981;
+  --color-danger: #f43f5e;
+  --color-warning: #f59e0b;
+  --color-info: #3b82f6;
+
+  --shadow-sm: 0 1px 2px 0 rgba(15, 61, 46, 0.04);
+  --shadow-md: 0 4px 12px -2px rgba(15, 61, 46, 0.06), 0 2px 6px -1px rgba(15, 61, 46, 0.04);
+  --shadow-lg: 0 12px 24px -4px rgba(15, 61, 46, 0.08), 0 6px 12px -2px rgba(15, 61, 46, 0.04);
+
+  --nav-bg: rgba(240, 249, 246, 0.85);
   --input-bg: #ffffff;
-  --hover-bg: rgba(26, 26, 26, 0.04);
+  --hover-bg: rgba(52, 211, 153, 0.08);
 }
 
 /* ---------- Dark Theme ---------- */
 [data-theme="dark"] {
-  --color-primary: #f0f0f0;
-  --color-accent: #c9a86c;
-  --color-bg-page: #121212;
-  --color-bg-card: #1e1e1e;
-  --color-border: #2a2a2a;
-  --color-text-primary: #f0f0f0;
-  --color-text-secondary: #a3a3a3;
-  --color-text-tertiary: #737373;
-  --color-success: #10b981;
-  --color-danger: #ef4444;
-  --color-warning: #f59e0b;
+  --color-primary: #e8f5f1;
+  --color-accent: #34d399;
+  --color-accent-soft: #064e3b;
+  --color-accent-hover: #6ee7b7;
+
+  --color-bg-page: #0b1a15;
+  --color-bg-card: #122b22;
+  --color-border: #1a3d30;
+
+  --color-text-primary: #e8f5f1;
+  --color-text-secondary: #9dbbae;
+  --color-text-tertiary: #5f8576;
+
+  --color-success: #34d399;
+  --color-danger: #fb7185;
+  --color-warning: #fbbf24;
+  --color-info: #60a5fa;
 
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.4), 0 2px 6px -1px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.5), 0 6px 12px -2px rgba(0, 0, 0, 0.4);
 
-  --nav-bg: rgba(18, 18, 18, 0.82);
-  --input-bg: #252525;
-  --hover-bg: rgba(255, 255, 255, 0.05);
+  --nav-bg: rgba(11, 26, 21, 0.85);
+  --input-bg: #0f291e;
+  --hover-bg: rgba(52, 211, 153, 0.1);
 }
 
 /* ---------- System Theme ---------- */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    --color-primary: #f0f0f0;
-    --color-accent: #c9a86c;
-    --color-bg-page: #121212;
-    --color-bg-card: #1e1e1e;
-    --color-border: #2a2a2a;
-    --color-text-primary: #f0f0f0;
-    --color-text-secondary: #a3a3a3;
-    --color-text-tertiary: #737373;
-    --color-success: #10b981;
-    --color-danger: #ef4444;
-    --color-warning: #f59e0b;
+    --color-primary: #e8f5f1;
+    --color-accent: #34d399;
+    --color-accent-soft: #064e3b;
+    --color-accent-hover: #6ee7b7;
+
+    --color-bg-page: #0b1a15;
+    --color-bg-card: #122b22;
+    --color-border: #1a3d30;
+
+    --color-text-primary: #e8f5f1;
+    --color-text-secondary: #9dbbae;
+    --color-text-tertiary: #5f8576;
+
+    --color-success: #34d399;
+    --color-danger: #fb7185;
+    --color-warning: #fbbf24;
+    --color-info: #60a5fa;
 
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.4), 0 2px 6px -1px rgba(0, 0, 0, 0.3);
     --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.5), 0 6px 12px -2px rgba(0, 0, 0, 0.4);
 
-    --nav-bg: rgba(18, 18, 18, 0.82);
-    --input-bg: #252525;
-    --hover-bg: rgba(255, 255, 255, 0.05);
+    --nav-bg: rgba(11, 26, 21, 0.85);
+    --input-bg: #0f291e;
+    --hover-bg: rgba(52, 211, 153, 0.1);
   }
 }
 
@@ -93,7 +112,7 @@ body {
   font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
   background-color: var(--color-bg-page);
   color: var(--color-text-primary);
-  line-height: 1.6;
+  line-height: 1.55;
   min-height: 100vh;
   transition: background-color 0.35s ease, color 0.35s ease;
 }

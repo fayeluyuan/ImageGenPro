@@ -13,6 +13,7 @@ import time
 import re
 import tempfile
 import base64
+import subprocess
 
 # 将项目根目录加入路径，以便导入 core/api_client.py
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -162,9 +163,11 @@ def generate_batch(req: GenerateRequest):
                             error_msg = "无法获取图片数据"
                     else:
                         error_msg = result.error_message or "生成失败"
+                        print(f"[API ERROR] url={config.api_url} model={config.model} error={error_msg}")
 
                 except Exception as e:
                     error_msg = str(e)
+                    print(f"[API EXCEPTION] url={config.api_url} model={config.model} exc={e}")
 
                 if attempt < max_retries:
                     time.sleep(2 * attempt)  # 逐次增加等待时间
@@ -237,5 +240,66 @@ def get_image(path: str):
     return StreamingResponse(iterfile(), media_type=mime_type)
 
 
+@app.get("/api/pick-folder")
+def pick_folder():
+    """
+    调用系统原生文件夹选择对话框（通过子进程运行，避免阻塞主服务）
+    Windows 使用 PowerShell + FolderBrowserDialog，其他平台使用 tkinter
+    """
+    try:
+        if os.name == 'nt':
+            # Windows: 使用 PowerShell 弹窗，并尝试创建新控制台窗口确保可见
+            ps_script = (
+                'Add-Type -AssemblyName System.Windows.Forms; '
+                '$f = New-Object System.Windows.Forms.FolderBrowserDialog; '
+                '$f.Description = "请选择输出目录"; '
+                '$f.ShowNewFolderButton = $true; '
+                'if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { '
+                '    Write-Host -NoNewline $f.SelectedPath '
+                '}'
+            )
+            kwargs = {}
+            if hasattr(subprocess, 'CREATE_NEW_CONSOLE'):
+                kwargs['creationflags'] = subprocess.CREATE_NEW_CONSOLE
+
+            result = subprocess.run(
+                ['powershell', '-NoProfile', '-WindowStyle', 'Normal', '-Command', ps_script],
+                capture_output=True, text=True, timeout=60, **kwargs
+            )
+            folder = result.stdout.strip()
+            if not folder and result.stderr.strip():
+                print('pick-folder stderr:', result.stderr.strip())
+        else:
+            script = '''
+import tkinter as tk
+from tkinter import filedialog
+import sys
+root = tk.Tk()
+root.withdraw()
+folder = filedialog.askdirectory()
+root.destroy()
+print(folder, end='')
+'''
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+                f.write(script)
+                script_path = f.name
+
+            result = subprocess.run(
+                [sys.executable, script_path],
+                capture_output=True, text=True, timeout=60
+            )
+            try:
+                os.remove(script_path)
+            except Exception:
+                pass
+            folder = result.stdout.strip()
+
+        if folder:
+            return {"path": folder}
+        return {"path": None}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000, reload=False)
+    uvicorn.run(app, host="127.0.0.1", port=8001, reload=False)

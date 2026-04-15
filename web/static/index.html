@@ -40,6 +40,75 @@
         <!-- Left Column: Configuration -->
         <aside class="column-left">
 
+          <!-- Output Config -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">输出配置</div>
+                <div class="card-subtitle">画幅比例与画质</div>
+              </div>
+            </div>
+            <div class="form-group">
+              <span class="aspect-group-label">画幅比例</span>
+              <div class="pill-group" data-aspect-group>
+                <button class="btn btn-pill active" data-aspect="1:1">1:1</button>
+                <button class="btn btn-pill" data-aspect="3:4">3:4</button>
+                <button class="btn btn-pill" data-aspect="4:3">4:3</button>
+                <button class="btn btn-pill" data-aspect="16:9">16:9</button>
+                <button class="btn btn-pill" data-aspect="9:16">9:16</button>
+              </div>
+            </div>
+            <div class="form-group" style="margin-top: 12px;">
+              <span class="aspect-group-label">画质</span>
+              <div class="pill-group" data-quality-group>
+                <button class="btn btn-pill active" data-quality="1k">1k</button>
+                <button class="btn btn-pill" data-quality="2k">2k</button>
+                <button class="btn btn-pill" data-quality="4k">4k</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reference Image Upload -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">参考图</div>
+                <div class="card-subtitle">拖拽上传或点击选择</div>
+              </div>
+            </div>
+            <div class="drop-zone" data-drop-zone id="ref-drop-zone">
+              <input type="file" multiple accept="image/*" class="sr-only" id="ref-file-input">
+              <div class="drop-zone-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17,8 12,3 7,8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+              </div>
+              <div class="drop-zone-text">点击或拖拽图片到此处</div>
+              <div class="drop-zone-hint">最多 3 张，支持 JPG、PNG、WebP</div>
+            </div>
+            <div class="ref-thumb-grid" id="ref-thumb-grid">
+              <!-- thumbnails injected here -->
+            </div>
+          </div>
+
+          <!-- Output Directory -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">输出目录</div>
+                <div class="card-subtitle">图片保存位置</div>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <div class="output-dir-row">
+                <input class="form-input" type="text" id="output-dir" placeholder="E:\Outputs\ImageGenPro">
+                <button class="btn btn-secondary" id="browse-output-dir" type="button">浏览</button>
+              </div>
+            </div>
+          </div>
+
           <!-- API Config -->
           <div class="card api-config-card">
             <div class="card-header">
@@ -82,70 +151,17 @@
             </div>
           </div>
 
-          <!-- Output Config -->
+          <!-- History Thumbnails -->
           <div class="card">
             <div class="card-header">
               <div>
-                <div class="card-title">输出配置</div>
-                <div class="card-subtitle">画幅比例与画质</div>
+                <div class="card-title">历史缩略图</div>
+                <div class="card-subtitle">最近生成的图片</div>
               </div>
             </div>
-            <div class="form-group">
-              <span class="aspect-group-label">画幅比例</span>
-              <div class="pill-group" data-aspect-group>
-                <button class="btn btn-pill active" data-aspect="1:1">1:1</button>
-                <button class="btn btn-pill" data-aspect="3:4">3:4</button>
-                <button class="btn btn-pill" data-aspect="4:3">4:3</button>
-                <button class="btn btn-pill" data-aspect="16:9">16:9</button>
-                <button class="btn btn-pill" data-aspect="9:16">9:16</button>
-              </div>
+            <div class="history-thumbnails" id="history-thumbnails">
+              <div class="history-empty">暂无生成记录</div>
             </div>
-            <div class="form-group" style="margin-top: 14px;">
-              <span class="aspect-group-label">画质</span>
-              <div class="pill-group" data-quality-group>
-                <button class="btn btn-pill active" data-quality="1k">1k</button>
-                <button class="btn btn-pill" data-quality="2k">2k</button>
-                <button class="btn btn-pill" data-quality="4k">4k</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Reference Image Upload -->
-          <div class="card">
-            <div class="card-header">
-              <div>
-                <div class="card-title">参考图</div>
-                <div class="card-subtitle">拖拽上传或点击选择</div>
-              </div>
-            </div>
-            <div class="drop-zone" data-drop-zone id="ref-drop-zone">
-              <input type="file" multiple accept="image/*" class="sr-only" id="ref-file-input">
-              <div class="drop-zone-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="17,8 12,3 7,8"/>
-                  <line x1="12" y1="3" x2="12" y2="15"/>
-                </svg>
-              </div>
-              <div class="drop-zone-text">点击或拖拽图片到此处</div>
-              <div class="drop-zone-hint">支持 JPG、PNG、WebP</div>
-            </div>
-            <div class="ref-thumb-grid" id="ref-thumb-grid">
-              <!-- thumbnails injected here -->
-            </div>
-            <button class="btn btn-secondary btn-sm btn-block" id="copy-ref-paths" style="margin-top: 12px;">📋 复制所有参考图路径</button>
-          </div>
-
-          <!-- Output Directory & Generate -->
-          <div class="card generate-card">
-            <div class="form-group">
-              <label class="form-label" for="output-dir">输出目录</label>
-              <div class="output-dir-row">
-                <input class="form-input" type="text" id="output-dir" placeholder="/mnt/e/Outputs/ImageGenPro">
-                <button class="btn btn-secondary" id="browse-output-dir" type="button">浏览</button>
-              </div>
-            </div>
-            <button class="btn btn-primary btn-block" id="start-batch">开始批量生成</button>
           </div>
 
         </aside>
@@ -154,67 +170,187 @@
         <section class="column-center" id="prompt-center">
           <div class="section-header">
             <div>
-              <div class="section-title">提示词任务列表</div>
-              <div class="section-subtitle">批量配置生成任务</div>
+              <div class="section-title">提示词任务</div>
+              <div class="section-subtitle">共 6 个任务，点击生成按钮单独执行</div>
             </div>
           </div>
 
           <div class="prompt-list" id="prompt-list">
-            <!-- prompt cards injected here -->
+            <!-- 6 prompt cards injected here -->
           </div>
-
-          <button class="btn btn-secondary btn-block" id="add-prompt-card" style="margin-top: 8px;">+ 添加提示词</button>
         </section>
 
-        <!-- Right Column: Preview -->
+        <!-- Right Column: Preview Grid -->
         <aside class="column-right">
-          <div class="card preview-card">
-            <div class="card-header">
-              <div>
-                <div class="card-title">预览</div>
-                <div class="card-subtitle" id="preview-subtitle">生成结果将在此显示</div>
-              </div>
-              <span class="badge badge-success" id="preview-badge">就绪</span>
-            </div>
-            <div class="preview-large" id="preview-large" style="height:400px;">
-              <div class="preview-placeholder" id="preview-placeholder">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                  <circle cx="8.5" cy="8.5" r="1.5"/>
-                  <polyline points="21,15 16,10 5,21"/>
-                </svg>
-                <div>暂无预览</div>
-              </div>
-              <div class="preview-loading hidden" id="preview-loading">
-                <div class="loading-ripple"></div>
-                <div class="loading-text">正在生成中...</div>
-              </div>
-              <img class="preview-image hidden" id="preview-image" src="" alt="preview">
-            </div>
-            <div class="preview-progress-wrap hidden" id="preview-progress-wrap">
-              <div class="preview-progress-bar" id="preview-progress-bar" style="width:0%"></div>
-            </div>
-            <div class="preview-meta" id="preview-meta" style="margin-top: 12px;">
-              <span id="preview-dims">1024 × 1024</span>
-              <span>•</span>
-              <span id="preview-status">等待生成</span>
+          <div class="section-header">
+            <div>
+              <div class="section-title">生成预览</div>
+              <div class="section-subtitle">每张图片对应右侧同序号位置</div>
             </div>
           </div>
 
-          <div class="card">
-            <div class="card-header" style="margin-bottom:12px;">
-              <div>
-                <div class="card-title">历史缩略图</div>
-                <div class="card-subtitle">最近生成的图片</div>
+          <div class="preview-grid" id="preview-grid">
+            <!-- 6 preview slots -->
+            <div class="preview-slot" data-slot="0">
+              <div class="preview-slot-header">
+                <span class="preview-slot-index">#01</span>
+                <span class="preview-slot-status" id="slot-status-0">等待中</span>
+              </div>
+              <div class="preview-slot-body" id="slot-body-0">
+                <div class="preview-slot-placeholder" id="slot-placeholder-0">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21,15 16,10 5,21"/>
+                  </svg>
+                  <div class="placeholder-text">等待生成</div>
+                </div>
+                <div class="preview-slot-loading hidden" id="slot-loading-0">
+                  <div class="preview-slot-spinner"></div>
+                  <div class="preview-slot-loading-text">生成中...</div>
+                </div>
+                <img class="hidden" id="slot-img-0" src="" alt="preview-1">
+                <button class="btn btn-sm btn-secondary preview-set-ref hidden" id="slot-setref-0" data-slot="0">设为参考图</button>
+                <div class="preview-slot-error hidden" id="slot-error-0">
+                  <div class="preview-slot-error-icon">❌</div>
+                  <div class="preview-slot-error-text" id="slot-error-text-0">生成失败</div>
+                </div>
               </div>
             </div>
-            <div class="preview-tabs" id="preview-tabs">
-              <button class="preview-tab active" data-tab="all">全部</button>
-              <button class="preview-tab" data-tab="success">成功</button>
-              <button class="preview-tab" data-tab="failed">失败</button>
+
+            <div class="preview-slot" data-slot="1">
+              <div class="preview-slot-header">
+                <span class="preview-slot-index">#02</span>
+                <span class="preview-slot-status" id="slot-status-1">等待中</span>
+              </div>
+              <div class="preview-slot-body" id="slot-body-1">
+                <div class="preview-slot-placeholder" id="slot-placeholder-1">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21,15 16,10 5,21"/>
+                  </svg>
+                  <div class="placeholder-text">等待生成</div>
+                </div>
+                <div class="preview-slot-loading hidden" id="slot-loading-1">
+                  <div class="preview-slot-spinner"></div>
+                  <div class="preview-slot-loading-text">生成中...</div>
+                </div>
+                <img class="hidden" id="slot-img-1" src="" alt="preview-2">
+                <button class="btn btn-sm btn-secondary preview-set-ref hidden" id="slot-setref-1" data-slot="1">设为参考图</button>
+                <div class="preview-slot-error hidden" id="slot-error-1">
+                  <div class="preview-slot-error-icon">❌</div>
+                  <div class="preview-slot-error-text" id="slot-error-text-1">生成失败</div>
+                </div>
+              </div>
             </div>
-            <div class="preview-thumbnails" id="preview-thumbnails">
-              <div class="thumb-empty">暂无生成记录</div>
+
+            <div class="preview-slot" data-slot="2">
+              <div class="preview-slot-header">
+                <span class="preview-slot-index">#03</span>
+                <span class="preview-slot-status" id="slot-status-2">等待中</span>
+              </div>
+              <div class="preview-slot-body" id="slot-body-2">
+                <div class="preview-slot-placeholder" id="slot-placeholder-2">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21,15 16,10 5,21"/>
+                  </svg>
+                  <div class="placeholder-text">等待生成</div>
+                </div>
+                <div class="preview-slot-loading hidden" id="slot-loading-2">
+                  <div class="preview-slot-spinner"></div>
+                  <div class="preview-slot-loading-text">生成中...</div>
+                </div>
+                <img class="hidden" id="slot-img-2" src="" alt="preview-3">
+                <button class="btn btn-sm btn-secondary preview-set-ref hidden" id="slot-setref-2" data-slot="2">设为参考图</button>
+                <div class="preview-slot-error hidden" id="slot-error-2">
+                  <div class="preview-slot-error-icon">❌</div>
+                  <div class="preview-slot-error-text" id="slot-error-text-2">生成失败</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="preview-slot" data-slot="3">
+              <div class="preview-slot-header">
+                <span class="preview-slot-index">#04</span>
+                <span class="preview-slot-status" id="slot-status-3">等待中</span>
+              </div>
+              <div class="preview-slot-body" id="slot-body-3">
+                <div class="preview-slot-placeholder" id="slot-placeholder-3">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21,15 16,10 5,21"/>
+                  </svg>
+                  <div class="placeholder-text">等待生成</div>
+                </div>
+                <div class="preview-slot-loading hidden" id="slot-loading-3">
+                  <div class="preview-slot-spinner"></div>
+                  <div class="preview-slot-loading-text">生成中...</div>
+                </div>
+                <img class="hidden" id="slot-img-3" src="" alt="preview-4">
+                <button class="btn btn-sm btn-secondary preview-set-ref hidden" id="slot-setref-3" data-slot="3">设为参考图</button>
+                <div class="preview-slot-error hidden" id="slot-error-3">
+                  <div class="preview-slot-error-icon">❌</div>
+                  <div class="preview-slot-error-text" id="slot-error-text-3">生成失败</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="preview-slot" data-slot="4">
+              <div class="preview-slot-header">
+                <span class="preview-slot-index">#05</span>
+                <span class="preview-slot-status" id="slot-status-4">等待中</span>
+              </div>
+              <div class="preview-slot-body" id="slot-body-4">
+                <div class="preview-slot-placeholder" id="slot-placeholder-4">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21,15 16,10 5,21"/>
+                  </svg>
+                  <div class="placeholder-text">等待生成</div>
+                </div>
+                <div class="preview-slot-loading hidden" id="slot-loading-4">
+                  <div class="preview-slot-spinner"></div>
+                  <div class="preview-slot-loading-text">生成中...</div>
+                </div>
+                <img class="hidden" id="slot-img-4" src="" alt="preview-5">
+                <button class="btn btn-sm btn-secondary preview-set-ref hidden" id="slot-setref-4" data-slot="4">设为参考图</button>
+                <div class="preview-slot-error hidden" id="slot-error-4">
+                  <div class="preview-slot-error-icon">❌</div>
+                  <div class="preview-slot-error-text" id="slot-error-text-4">生成失败</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="preview-slot" data-slot="5">
+              <div class="preview-slot-header">
+                <span class="preview-slot-index">#06</span>
+                <span class="preview-slot-status" id="slot-status-5">等待中</span>
+              </div>
+              <div class="preview-slot-body" id="slot-body-5">
+                <div class="preview-slot-placeholder" id="slot-placeholder-5">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21,15 16,10 5,21"/>
+                  </svg>
+                  <div class="placeholder-text">等待生成</div>
+                </div>
+                <div class="preview-slot-loading hidden" id="slot-loading-5">
+                  <div class="preview-slot-spinner"></div>
+                  <div class="preview-slot-loading-text">生成中...</div>
+                </div>
+                <img class="hidden" id="slot-img-5" src="" alt="preview-6">
+                <button class="btn btn-sm btn-secondary preview-set-ref hidden" id="slot-setref-5" data-slot="5">设为参考图</button>
+                <div class="preview-slot-error hidden" id="slot-error-5">
+                  <div class="preview-slot-error-icon">❌</div>
+                  <div class="preview-slot-error-text" id="slot-error-text-5">生成失败</div>
+                </div>
+              </div>
             </div>
           </div>
         </aside>
@@ -363,9 +499,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Hidden file input for browse button -->
-  <input type="file" id="browse-dir-input" class="sr-only" webkitdirectory directory>
 
   <script src="/static/js/theme-manager.js"></script>
   <script src="/static/js/app.js"></script>

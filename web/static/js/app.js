@@ -103,7 +103,6 @@
         const el = views[key];
         if (key === target) {
           el.classList.remove('hidden');
-          // small delay to allow display change before opacity transition
           requestAnimationFrame(() => el.classList.add('active'));
         } else {
           el.classList.remove('active');
@@ -151,7 +150,6 @@
         customUrlGroup.classList.remove('hidden');
       } else {
         modelGroup.classList.remove('hidden');
-        customModelGroup.classList.add('hidden');
         customUrlGroup.classList.add('hidden');
         if (modelSelect.value === 'custom') {
           customModelGroup.classList.remove('hidden');
@@ -167,7 +165,7 @@
     apiKeyToggle.addEventListener('click', () => {
       const isPassword = apiKeyInput.type === 'password';
       apiKeyInput.type = isPassword ? 'text' : 'password';
-      apiKeyToggle.textContent = isPassword ? '👈' : '👁';
+      apiKeyToggle.textContent = isPassword ? '🙈' : '👁';
       apiKeyToggle.setAttribute('aria-label', isPassword ? '隐藏密码' : '显示密码');
     });
 
@@ -197,11 +195,10 @@
     const zone = document.getElementById('ref-drop-zone');
     const input = document.getElementById('ref-file-input');
     const grid = document.getElementById('ref-thumb-grid');
-    const copyBtn = document.getElementById('copy-ref-paths');
 
     if (!zone || !input || !grid) return;
 
-    function renderThumbs() {
+    window.renderRefThumbs = function renderThumbs() {
       grid.innerHTML = '';
       referenceImages.forEach((img, idx) => {
         const item = document.createElement('div');
@@ -277,29 +274,14 @@
         input.value = '';
       }
     });
-
-    copyBtn.addEventListener('click', async () => {
-      if (referenceImages.length === 0) {
-        alert('没有参考图可复制');
-        return;
-      }
-      const text = referenceImages.map((img) => img.dataUrl).join('\n');
-      try {
-        await navigator.clipboard.writeText(text);
-        const original = copyBtn.textContent;
-        copyBtn.textContent = '✅ 已复制';
-        setTimeout(() => (copyBtn.textContent = original), 1500);
-      } catch (err) {
-        console.error('Copy failed', err);
-      }
-    });
   }
 
   /* ---------- Prompt Cards ---------- */
+  const TOTAL_SLOTS = 6;
   let promptCards = [];
-  let nextCardId = 1;
   let referenceImages = [];
   let activeTemplateCardId = null;
+  let generatingSlots = new Set();
 
   function getPromptCardIndexById(id) {
     return promptCards.findIndex((c) => c.id === id);
@@ -331,55 +313,37 @@
         ta.dispatchEvent(new Event('input'));
       }
     } else {
-      // if no empty, add new card
-      const newCard = { id: nextCardId++, prompt: text, filename: '' };
-      promptCards.push(newCard);
-      renderPromptList();
-      setTimeout(() => {
-        const last = document.getElementById('prompt-list').lastElementChild;
-        if (last) last.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      }, 0);
+      alert('所有提示词槽位已满，请手动清空一个后再应用');
     }
   }
 
   function initPromptCards() {
     const list = document.getElementById('prompt-list');
-    const addBtn = document.getElementById('add-prompt-card');
     const popup = document.getElementById('template-popup');
     const closePopup = document.getElementById('close-template-popup');
 
-    function createCardData() {
-      return { id: nextCardId++, prompt: '', filename: '' };
+    function createCardData(idx) {
+      return { id: idx + 1, prompt: '', filename: '' };
     }
 
-    function renumberCards() {
-      const cards = list.querySelectorAll('.prompt-card');
-      cards.forEach((card, idx) => {
-        const indexEl = card.querySelector('.prompt-card-index');
-        if (indexEl) indexEl.textContent = `#${padNum(idx + 1)}`;
-      });
-    }
-
-    function buildCardHTML(card) {
+    function buildCardHTML(card, idx) {
       return `
         <div class="prompt-card-header">
-          <span class="prompt-card-index">#${padNum(getPromptCardIndexById(card.id) + 1)}</span>
+          <span class="prompt-card-index">#${padNum(idx + 1)}</span>
           <div class="prompt-card-actions">
-            <button class="btn-icon btn-sm move-up-btn" data-id="${card.id}" title="上移">▲</button>
-            <button class="btn-icon btn-sm delete-card-btn" data-id="${card.id}" title="删除">🗑️</button>
+            <button class="btn btn-sm generate-btn" data-id="${card.id}" data-idx="${idx}">✨ 生成</button>
           </div>
         </div>
         <textarea class="form-textarea prompt-textarea" data-prompt="${card.id}" placeholder="例如：一位穿着未来风格外套的女性站在霓虹灯闪烁的东京街头，雨夜，电影感打光，8K 细节...">${escapeHtml(card.prompt)}</textarea>
         <div class="prompt-card-footer">
           <div class="filename-row">
             <span class="filename-label">文件名:</span>
-            <input type="text" class="form-input filename-input" data-filename="${card.id}" value="${escapeHtml(card.filename)}" placeholder="image_01">
-            <button class="btn btn-secondary btn-sm auto-name-btn" data-id="${card.id}">🎲 自动命名</button>
+            <input type="text" class="form-input filename-input" data-filename="${card.id}" value="${escapeHtml(card.filename)}" placeholder="image_${padNum(idx + 1)}">
           </div>
           <div class="template-status-row">
             <div style="display:flex;gap:8px;">
-              <button class="btn btn-secondary btn-sm insert-template-btn" data-id="${card.id}">📋 插入模板</button>
-              <button class="btn btn-secondary btn-sm save-favorite-btn" data-id="${card.id}">♡ 保存收藏</button>
+              <button class="btn btn-secondary btn-sm insert-template-btn" data-id="${card.id}">📋 模板</button>
+              <button class="btn btn-secondary btn-sm save-favorite-btn" data-id="${card.id}">♡ 收藏</button>
             </div>
             <span class="status-text"><span class="status-dot waiting"></span> 等待中</span>
           </div>
@@ -387,65 +351,24 @@
       `;
     }
 
-    window.renderPromptList = function renderPromptList() {
+    function renderPromptList() {
       list.innerHTML = '';
-      promptCards.forEach((card) => {
+      promptCards.forEach((card, idx) => {
         const el = document.createElement('div');
         el.className = 'prompt-card';
         el.setAttribute('data-card-id', card.id);
-        el.innerHTML = buildCardHTML(card);
+        el.innerHTML = buildCardHTML(card, idx);
         list.appendChild(el);
       });
-      renumberCards();
       bindCardEvents();
-    };
+    }
+    window.renderPromptList = renderPromptList;
 
     function bindCardEvents() {
-      list.querySelectorAll('.delete-card-btn').forEach((btn) => {
+      list.querySelectorAll('.generate-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
-          const id = parseInt(btn.getAttribute('data-id'), 10);
-          const idx = getPromptCardIndexById(id);
-          if (idx > -1) {
-            syncPromptCardData();
-            promptCards.splice(idx, 1);
-            renderPromptList();
-          }
-        });
-      });
-
-      list.querySelectorAll('.move-up-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const id = parseInt(btn.getAttribute('data-id'), 10);
-          const idx = getPromptCardIndexById(id);
-          if (idx > 0) {
-            syncPromptCardData();
-            const temp = promptCards[idx];
-            promptCards[idx] = promptCards[idx - 1];
-            promptCards[idx - 1] = temp;
-            renderPromptList();
-          }
-        });
-      });
-
-      list.querySelectorAll('.auto-name-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const id = parseInt(btn.getAttribute('data-id'), 10);
-          const textarea = list.querySelector(`textarea[data-prompt="${id}"]`);
-          const input = list.querySelector(`input[data-filename="${id}"]`);
-          const promptText = textarea ? textarea.value.trim() : '';
-          let name = 'image';
-          if (promptText) {
-            const cleaned = promptText.replace(/[，,。！!？?;;：]/g, ' ');
-            const words = cleaned.trim().split(/\s+/).filter((w) => w.length > 0);
-            if (words.length >= 2) {
-              name = words.slice(0, 2).join('_');
-            } else if (words.length === 1) {
-              name = words[0];
-            }
-          }
-          const idx = getPromptCardIndexById(id) + 1;
-          input.value = `${name}_${padNum(idx)}`;
-          syncPromptCardData();
+          const idx = parseInt(btn.getAttribute('data-idx'), 10);
+          runSingleGeneration(idx);
         });
       });
 
@@ -479,21 +402,11 @@
       });
     }
 
-    // Initialize with 8 cards
-    for (let i = 0; i < 8; i++) {
-      promptCards.push(createCardData());
+    // Initialize with 6 cards
+    for (let i = 0; i < TOTAL_SLOTS; i++) {
+      promptCards.push(createCardData(i));
     }
     renderPromptList();
-
-    addBtn.addEventListener('click', () => {
-      syncPromptCardData();
-      promptCards.push(createCardData());
-      renderPromptList();
-      setTimeout(() => {
-        const last = list.lastElementChild;
-        if (last) last.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      }, 0);
-    });
 
     closePopup.addEventListener('click', () => {
       popup.classList.add('hidden');
@@ -504,13 +417,6 @@
       if (e.target === popup) {
         popup.classList.add('hidden');
         activeTemplateCardId = null;
-      }
-    });
-
-    list.addEventListener('click', (e) => {
-      const btn = e.target.closest('.insert-template-btn');
-      if (btn) {
-        activeTemplateCardId = parseInt(btn.getAttribute('data-id'), 10);
       }
     });
   }
@@ -548,164 +454,176 @@
     });
   }
 
+  /* ---------- Preview Slots ---------- */
+  function setSlotLoading(index, text) {
+    generatingSlots.add(index);
+    document.getElementById(`slot-status-${index}`).textContent = text || '生成中';
+    document.getElementById(`slot-status-${index}`).className = 'preview-slot-status generating';
+    document.getElementById(`slot-placeholder-${index}`).classList.add('hidden');
+    document.getElementById(`slot-img-${index}`).classList.add('hidden');
+    document.getElementById(`slot-error-${index}`).classList.add('hidden');
+    const setref = document.getElementById(`slot-setref-${index}`);
+    if (setref) setref.classList.add('hidden');
+    document.getElementById(`slot-loading-${index}`).classList.remove('hidden');
+  }
+
+  function setSlotImage(index, url) {
+    generatingSlots.delete(index);
+    document.getElementById(`slot-status-${index}`).textContent = '完成';
+    document.getElementById(`slot-status-${index}`).className = 'preview-slot-status success';
+    document.getElementById(`slot-placeholder-${index}`).classList.add('hidden');
+    document.getElementById(`slot-loading-${index}`).classList.add('hidden');
+    document.getElementById(`slot-error-${index}`).classList.add('hidden');
+    const img = document.getElementById(`slot-img-${index}`);
+    img.src = url;
+    img.classList.remove('hidden');
+    const setref = document.getElementById(`slot-setref-${index}`);
+    if (setref) setref.classList.remove('hidden');
+    addHistoryThumbnail(url);
+  }
+
+  function setSlotError(index, error) {
+    generatingSlots.delete(index);
+    document.getElementById(`slot-status-${index}`).textContent = '失败';
+    document.getElementById(`slot-status-${index}`).className = 'preview-slot-status error';
+    document.getElementById(`slot-placeholder-${index}`).classList.add('hidden');
+    document.getElementById(`slot-loading-${index}`).classList.add('hidden');
+    document.getElementById(`slot-img-${index}`).classList.add('hidden');
+    document.getElementById(`slot-error-text-${index}`).textContent = error || '生成失败';
+    document.getElementById(`slot-error-${index}`).classList.remove('hidden');
+    const setref = document.getElementById(`slot-setref-${index}`);
+    if (setref) setref.classList.add('hidden');
+  }
+
+  function setSlotIdle(index) {
+    generatingSlots.delete(index);
+    document.getElementById(`slot-status-${index}`).textContent = '等待中';
+    document.getElementById(`slot-status-${index}`).className = 'preview-slot-status';
+    document.getElementById(`slot-placeholder-${index}`).classList.remove('hidden');
+    document.getElementById(`slot-loading-${index}`).classList.add('hidden');
+    document.getElementById(`slot-error-${index}`).classList.add('hidden');
+    const img = document.getElementById(`slot-img-${index}`);
+    img.classList.add('hidden');
+    img.src = '';
+    const setref = document.getElementById(`slot-setref-${index}`);
+    if (setref) setref.classList.add('hidden');
+  }
+
+  /* ---------- History Thumbnails ---------- */
+  function addHistoryThumbnail(url) {
+    const container = document.getElementById('history-thumbnails');
+    const empty = container.querySelector('.history-empty');
+    if (empty) empty.remove();
+
+    const item = document.createElement('div');
+    item.className = 'history-thumb-item';
+    item.innerHTML = `<img src="${escapeHtml(url)}" alt="history">`;
+    container.insertBefore(item, container.firstChild);
+
+    // keep max 10
+    while (container.children.length > 10) {
+      container.removeChild(container.lastChild);
+    }
+  }
 
   /* ---------- Output Directory Browse ---------- */
   function initBrowseButton() {
     const browseBtn = document.getElementById('browse-output-dir');
-    const browseInput = document.getElementById('browse-dir-input');
     const outputDir = document.getElementById('output-dir');
 
-    if (!browseBtn || !browseInput || !outputDir) return;
+    if (!browseBtn || !outputDir) return;
 
-    browseBtn.addEventListener('click', () => {
-      browseInput.click();
-    });
-
-    browseInput.addEventListener('change', () => {
-      if (browseInput.files && browseInput.files.length > 0) {
-        const first = browseInput.files[0];
-        const path = first.webkitRelativePath;
-        if (path) {
-          const dirName = path.split('/')[0];
-          outputDir.value = '/mnt/e/Outputs/ImageGenPro/' + dirName;
+    browseBtn.addEventListener('click', async () => {
+      try {
+        const res = await fetch('/api/pick-folder');
+        const data = await res.json();
+        if (data.path) {
+          outputDir.value = data.path;
         }
+      } catch (err) {
+        console.error('Pick folder failed:', err);
+        alert('打开文件夹选择器失败，请手动输入路径');
       }
     });
   }
 
-  /* ---------- Right Panel Preview ---------- */
-  const previewState = {
-    isGenerating: false,
-    currentTask: null,
-    progress: 0,
-    eta: 0,
-    thumbnails: [], // {id, url, status: 'success'|'failed'}
-    tab: 'all', // all | success | failed
-  };
+  /* ---------- Single Generation API ---------- */
+  async function runSingleGeneration(index) {
+    if (generatingSlots.has(index)) return;
 
-  function initPreviewPanel() {
-    const tabs = document.querySelectorAll('#preview-tabs .preview-tab');
-    tabs.forEach((tab) => {
-      tab.addEventListener('click', () => {
-        tabs.forEach((t) => t.classList.remove('active'));
-        tab.classList.add('active');
-        previewState.tab = tab.getAttribute('data-tab');
-        renderThumbnails();
-      });
-    });
-  }
-
-  function setPreviewGenerating(taskName) {
-    previewState.isGenerating = true;
-    previewState.currentTask = taskName;
-    previewState.progress = 0;
-
-    document.getElementById('preview-subtitle').textContent = `正在生成 ${taskName}`;
-    document.getElementById('preview-badge').textContent = '生成中';
-    document.getElementById('preview-badge').className = 'badge badge-warning';
-    document.getElementById('preview-placeholder').classList.add('hidden');
-    document.getElementById('preview-image').classList.add('hidden');
-    document.getElementById('preview-loading').classList.remove('hidden');
-    document.getElementById('preview-progress-wrap').classList.remove('hidden');
-    document.getElementById('preview-status').textContent = '生成中...';
-  }
-
-  function setPreviewLarge(url) {
-    const img = document.getElementById('preview-image');
-    const placeholder = document.getElementById('preview-placeholder');
-    if (url) {
-      img.src = url;
-      img.classList.remove('hidden');
-      placeholder.classList.add('hidden');
-    } else {
-      img.classList.add('hidden');
-      img.src = '';
-      placeholder.classList.remove('hidden');
-    }
-  }
-
-  function setPreviewIdle() {
-    previewState.isGenerating = false;
-    previewState.currentTask = null;
-    document.getElementById('preview-badge').textContent = '就绪';
-    document.getElementById('preview-badge').className = 'badge badge-success';
-    document.getElementById('preview-loading').classList.add('hidden');
-    document.getElementById('preview-progress-wrap').classList.add('hidden');
-
-    const img = document.getElementById('preview-image');
-    const placeholder = document.getElementById('preview-placeholder');
-    if (img.src && !img.classList.contains('hidden')) {
-      document.getElementById('preview-subtitle').textContent = '当前生成结果';
-      placeholder.classList.add('hidden');
-    } else {
-      document.getElementById('preview-subtitle').textContent = '生成结果将在此显示';
-      placeholder.classList.remove('hidden');
-      img.classList.add('hidden');
-      img.src = '';
-    }
-    document.getElementById('preview-status').textContent = '等待生成';
-  }
-
-  function setPreviewProgress(pct, etaSec) {
-    previewState.progress = pct;
-    previewState.eta = etaSec;
-    const bar = document.getElementById('preview-progress-bar');
-    bar.style.width = pct + '%';
-    const etaText = etaSec > 0 ? ` 预估剩余 ${Math.ceil(etaSec)}秒` : '';
-    document.getElementById('preview-status').textContent = `生成中...${pct}%${etaText}`;
-  }
-
-  function addThumbnail(url, status, error) {
-    previewState.thumbnails.push({ id: generateId(), url, status, error: error || '' });
-    renderThumbnails();
-  }
-
-  function renderThumbnails() {
-    const container = document.getElementById('preview-thumbnails');
-    const filtered = previewState.thumbnails.filter((t) => {
-      if (previewState.tab === 'all') return true;
-      return t.status === previewState.tab;
-    });
-
-    if (filtered.length === 0) {
-      container.innerHTML = `<div class="thumb-empty">暂无生成记录</div>`;
+    syncPromptCardData();
+    const card = promptCards[index];
+    if (!card || !card.prompt.trim()) {
+      alert(`提示词 #${padNum(index + 1)} 为空，无法生成`);
       return;
     }
 
-    container.innerHTML = filtered.map((t) => {
-      const imgHtml = t.url
-        ? `<img src="${escapeHtml(t.url)}" alt="thumb">`
-        : `<div class="thumb-placeholder-failed"><span>❌</span><small>生成失败</small></div>`;
-      return `
-      <div class="thumb-card ${t.status === 'failed' ? 'thumb-failed' : ''}" data-thumb-id="${escapeHtml(t.id)}">
-        ${imgHtml}
-        ${t.status === 'failed' ? '<div class="thumb-failed-badge">✕</div>' : ''}
-        <div class="thumb-menu">
-          <button class="thumb-menu-btn" data-action="folder">打开文件夹</button>
-          ${t.status === 'failed' ? `<button class="thumb-menu-btn" data-action="retry">重试</button>` : ''}
-          <button class="thumb-menu-btn" data-action="delete">删除</button>
-        </div>
-      </div>
-    `;
-    }).join('');
+    const provider = document.getElementById('provider').value;
+    const modelSelect = document.getElementById('model').value;
+    const customModel = document.getElementById('custom-model').value.trim();
+    const apiKey = document.getElementById('api-key').value.trim();
+    const outputDir = document.getElementById('output-dir').value.trim();
 
-    container.querySelectorAll('.thumb-card').forEach((card) => {
-      const id = card.getAttribute('data-thumb-id');
-      card.querySelectorAll('.thumb-menu-btn').forEach((btn) => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const action = btn.getAttribute('data-action');
-          if (action === 'delete') {
-            previewState.thumbnails = previewState.thumbnails.filter((x) => x.id !== id);
-            renderThumbnails();
-          } else if (action === 'retry') {
-            alert('重试功能需在后续版本实现');
-          } else if (action === 'folder') {
-            alert('打开文件夹功能需在后续版本实现');
-          }
-        });
+    if (!apiKey) {
+      alert('请填写 API 密钥');
+      return;
+    }
+    if (!outputDir) {
+      alert('请选择输出目录');
+      return;
+    }
+
+    const config = {
+      api_key: apiKey,
+      api_url: provider === 'custom'
+        ? (document.getElementById('custom-url').value.trim() || 'https://api.example.com/v1')
+        : 'https://lnapi.com/v1beta/models/gemini-3-pro-image-preview:generateContent',
+      model: provider === 'custom' ? (customModel || 'custom-model') : modelSelect,
+      aspect_ratio: document.querySelector('.pill-group[data-aspect-group] .btn-pill.active')?.getAttribute('data-aspect') || '1:1',
+      quality: document.querySelector('.pill-group[data-quality-group] .btn-pill.active')?.getAttribute('data-quality') || '2k',
+      output_dir: outputDir,
+    };
+
+    const payload = {
+      tasks: [{
+        id: padNum(index + 1),
+        prompt: card.prompt,
+        filename: card.filename || `image_${padNum(index + 1)}`,
+      }],
+      config,
+      reference_images: referenceImages.map((img) => img.dataUrl),
+    };
+
+    setSlotLoading(index, '生成中');
+
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
-    });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`服务器错误 ${res.status}: ${errText}`);
+      }
+
+      const results = await res.json();
+      const r = results[0];
+      if (!r) {
+        throw new Error('服务器返回空结果');
+      }
+
+      if (r.skipped || r.success) {
+        const imageUrl = `/api/image?path=${encodeURIComponent(config.output_dir + '/' + r.filename)}`;
+        setSlotImage(index, imageUrl);
+      } else {
+        setSlotError(index, r.error || '生成失败');
+      }
+    } catch (err) {
+      console.error(err);
+      setSlotError(index, err.message || '网络错误');
+    }
   }
 
   /* ---------- Template Library ---------- */
@@ -985,120 +903,39 @@
       });
   }
 
-  /* ---------- Batch Generate Real API ---------- */
-  function initBatchGenerate() {
-    const btn = document.getElementById('start-batch');
-    if (!btn) return;
-    btn.addEventListener('click', () => {
-      if (previewState.isGenerating) return;
-      syncPromptCardData();
-      const tasks = promptCards.filter((c) => c.prompt.trim()).map((c, idx) => ({ ...c, idx }));
-      if (tasks.length === 0) {
-        alert('请至少填写一个提示词');
-        return;
-      }
-      runRealGeneration(tasks);
-    });
-  }
+  /* ---------- Set Generated Image as Reference ---------- */
+  function initSetRefButtons() {
+    document.querySelectorAll('.preview-set-ref').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const idx = parseInt(btn.getAttribute('data-slot'), 10);
+        const img = document.getElementById(`slot-img-${idx}`);
+        if (!img || !img.src) return;
 
-  async function runRealGeneration(tasks) {
-    const provider = document.getElementById('provider').value;
-    const modelSelect = document.getElementById('model').value;
-    const customModel = document.getElementById('custom-model').value.trim();
-    const apiKey = document.getElementById('api-key').value.trim();
-    const outputDir = document.getElementById('output-dir').value.trim();
+        if (referenceImages.length >= 3) {
+          alert('最多只能上传 3 张参考图，请先删除一张');
+          return;
+        }
 
-    if (!apiKey) {
-      alert('请填写 API 密钥');
-      return;
-    }
-    if (!outputDir) {
-      alert('请选择输出目录');
-      return;
-    }
-
-    const config = {
-      api_key: apiKey,
-      api_url: provider === 'custom'
-        ? (document.getElementById('custom-url').value.trim() || 'https://api.example.com/v1')
-        : 'https://lnapi.com/v1beta/models/gemini-3-pro-image-preview:generateContent',
-      model: provider === 'custom' ? (customModel || 'custom-model') : modelSelect,
-      aspect_ratio: document.querySelector('.pill-group[data-aspect-group] .btn-pill.active')?.getAttribute('data-aspect') || '1:1',
-      quality: document.querySelector('.pill-group[data-quality-group] .btn-pill.active')?.getAttribute('data-quality') || '2k',
-      output_dir: outputDir,
-    };
-
-    const payload = {
-      tasks: tasks.map((t) => ({
-        id: t.id || padNum(t.idx + 1),
-        prompt: t.prompt,
-        filename: t.filename || `image_${padNum(t.idx + 1)}`,
-      })),
-      config,
-      reference_images: referenceImages.map((img) => img.dataUrl),
-    };
-
-    setPreviewGenerating(`批量生成 ${tasks.length} 张图片`);
-    setPreviewProgress(5, 0);
-
-    try {
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`服务器错误 ${res.status}: ${errText}`);
-      }
-
-      const results = await res.json();
-      let successCount = 0;
-      let failCount = 0;
-      let skipCount = 0;
-
-      results.forEach((r) => {
-        const imageUrl = `/api/image?path=${encodeURIComponent(config.output_dir + '/' + r.filename)}`;
-        if (r.skipped) {
-          skipCount++;
-          addThumbnail(imageUrl, 'success');
-          setPreviewLarge(imageUrl);
-        } else if (r.success) {
-          successCount++;
-          addThumbnail(imageUrl, 'success');
-          setPreviewLarge(imageUrl);
-        } else {
-          failCount++;
-          addThumbnail('', 'failed', r.error);
+        try {
+          const response = await fetch(img.src);
+          if (!response.ok) {
+            alert('读取图片失败');
+            return;
+          }
+          const blob = await response.blob();
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            referenceImages.push({ name: `生成图_${padNum(idx + 1)}.png`, dataUrl: e.target.result });
+            if (window.renderRefThumbs) window.renderRefThumbs();
+          };
+          reader.readAsDataURL(blob);
+        } catch (err) {
+          console.error('Set ref failed:', err);
+          alert('设为参考图失败');
         }
       });
-
-      setPreviewIdle();
-      showGenerateModal(successCount, failCount, skipCount);
-    } catch (err) {
-      console.error(err);
-      setPreviewIdle();
-      alert('生成失败: ' + err.message);
-    }
+    });
   }
-
-  function showGenerateModal(success, fail, skip) {
-    document.getElementById('modal-success-count').textContent = success;
-    document.getElementById('modal-fail-count').textContent = fail;
-    document.getElementById('modal-skip-count').textContent = skip;
-    document.getElementById('modal-time').textContent = '刚刚完成';
-    document.getElementById('generate-modal').classList.remove('hidden');
-  }
-
-  function closeGenerateModal() {
-    document.getElementById('generate-modal').classList.add('hidden');
-  }
-
-  document.getElementById('close-generate-modal').addEventListener('click', closeGenerateModal);
-  document.getElementById('generate-modal').addEventListener('click', (e) => {
-    if (e.target.id === 'generate-modal') closeGenerateModal();
-  });
 
   /* ---------- Init ---------- */
   function init() {
@@ -1109,10 +946,9 @@
     initReferenceImages();
     initPromptCards();
     initBrowseButton();
-    initPreviewPanel();
     initTemplateLibrary();
     initFavorites();
-    initBatchGenerate();
+    initSetRefButtons();
     initHealthCheck();
   }
 
